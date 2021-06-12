@@ -1,5 +1,6 @@
 proc gotocommit {} {
     global sha1string tagids headids curview varcid
+    global hashlength hashalgorithm
 
     if {$sha1string == {}
         || ([info exists currentid] && $sha1string == $currentid)} return
@@ -9,11 +10,11 @@ proc gotocommit {} {
         set id $headids($sha1string)
     } else {
         set id [string tolower $sha1string]
-        if {[regexp {^[0-9a-f]{4,39}$} $id]} {
+        if {[regexp [string map "@@ [expr $hashlength - 1]" {^[0-9a-f]{4,@@}$}] $id]} {
             set matches [longid $id]
             if {$matches ne {}} {
                 if {[llength $matches] > 1} {
-                    error_popup [mc "Short SHA1 id %s is ambiguous" $id]
+                    error_popup [mc "Short $hashalgorithm id %s is ambiguous" $id]
                     return
                 }
                 set id [lindex $matches 0]
@@ -30,7 +31,7 @@ proc gotocommit {} {
         return
     }
     if {[regexp {^[0-9a-fA-F]{4,}$} $sha1string]} {
-        set msg [mc "SHA1 id %s is not known" $sha1string]
+        set msg [mc "$hashalgorithm id %s is not known" $sha1string]
     } else {
         set msg [mc "Revision %s is not in the current view" $sha1string]
     }
