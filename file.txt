@@ -1,0 +1,38 @@
+proc gotocommit {} {
+    global sha1string tagids headids curview varcid
+
+    if {$sha1string == {}
+        || ([info exists currentid] && $sha1string == $currentid)} return
+    if {[info exists tagids($sha1string)]} {
+        set id $tagids($sha1string)
+    } elseif {[info exists headids($sha1string)]} {
+        set id $headids($sha1string)
+    } else {
+        set id [string tolower $sha1string]
+        if {[regexp {^[0-9a-f]{4,39}$} $id]} {
+            set matches [longid $id]
+            if {$matches ne {}} {
+                if {[llength $matches] > 1} {
+                    error_popup [mc "Short SHA1 id %s is ambiguous" $id]
+                    return
+                }
+                set id [lindex $matches 0]
+            }
+        } else {
+            if {[catch {set id [exec git rev-parse --verify $sha1string]}]} {
+                error_popup [mc "Revision %s is not known" $sha1string]
+                return
+            }
+        }
+    }
+    if {[commitinview $id $curview]} {
+        selectline [rowofcommit $id] 1
+        return
+    }
+    if {[regexp {^[0-9a-fA-F]{4,}$} $sha1string]} {
+        set msg [mc "SHA1 id %s is not known" $sha1string]
+    } else {
+        set msg [mc "Revision %s is not in the current view" $sha1string]
+    }
+    error_popup $msg
+}
